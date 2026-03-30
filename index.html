@@ -479,11 +479,18 @@ body{background:#0f1117;color:#e2e8f0;font-family:system-ui,sans-serif;min-heigh
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;">
       <div style="font-size:11px;font-weight:500;color:#818cf8;padding:6px 10px;background:#1a1a2e;border-radius:6px;border:0.5px solid #818cf855;">신상품 존 · 3월 이후 라이브</div>
+      <!-- KPI + 추이 -->
       <div class="panel"><div class="ptitle"><span class="dot" style="background:#818cf8;"></span>신상품 KPI</div><div id="newKpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div></div>
       <div class="panel"><div class="ptitle"><span class="dot" style="background:#818cf8;"></span>신상품 거래액 추이</div><div class="chart-wrap" style="height:130px;"><canvas id="newTrendChart"></canvas></div></div>
-      <div class="g2">
-        <div class="panel"><div class="ptitle"><span class="dot dg"></span>신상품 베스트 TOP 30</div><div class="tbl-wrap" id="newBestWrap"></div></div>
-        <div class="panel"><div class="ptitle"><span class="dot dr"></span>신상품 워스트 TOP 30</div><div class="tbl-wrap" id="newWorstWrap"></div></div>
+      <!-- 거래액 기준 베스트/워스트 TOP50 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="panel"><div class="ptitle"><span class="dot dg"></span>거래액 베스트 TOP 50</div><div class="tbl-wrap" id="newBestWrap"></div></div>
+        <div class="panel"><div class="ptitle"><span class="dot dr"></span>거래액 워스트 TOP 50</div><div class="tbl-wrap" id="newWorstWrap"></div></div>
+      </div>
+      <!-- CTR/CVR 베스트 TOP50 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="panel"><div class="ptitle"><span class="dot" style="background:#60a5fa;"></span>CTR 베스트 TOP 50 <span style="font-size:10px;color:#475569;margin-left:auto;">클릭율 높은 신상품</span></div><div class="tbl-wrap" id="newCtrBestWrap"></div></div>
+        <div class="panel"><div class="ptitle"><span class="dot" style="background:#34d399;"></span>CVR 베스트 TOP 50 <span style="font-size:10px;color:#475569;margin-left:auto;">전환율 높은 신상품</span></div><div class="tbl-wrap" id="newCvrBestWrap"></div></div>
       </div>
     </div>
   </div>
@@ -496,11 +503,18 @@ body{background:#0f1117;color:#e2e8f0;font-family:system-ui,sans-serif;min-heigh
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;">
       <div style="font-size:11px;font-weight:500;color:#fb923c;padding:6px 10px;background:#1f1508;border-radius:6px;border:0.5px solid #fb923c55;">재진행 존 · 3월 이전 라이브</div>
+      <!-- KPI + 추이 -->
       <div class="panel"><div class="ptitle"><span class="dot" style="background:#fb923c;"></span>재진행 KPI</div><div id="oldKpi" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div></div>
       <div class="panel"><div class="ptitle"><span class="dot" style="background:#fb923c;"></span>재진행 거래액 추이</div><div class="chart-wrap" style="height:130px;"><canvas id="oldTrendChart"></canvas></div></div>
-      <div class="g2">
-        <div class="panel"><div class="ptitle"><span class="dot dg"></span>재진행 베스트 TOP 30</div><div class="tbl-wrap" id="oldBestWrap"></div></div>
-        <div class="panel"><div class="ptitle"><span class="dot dr"></span>재진행 워스트 TOP 30</div><div class="tbl-wrap" id="oldWorstWrap"></div></div>
+      <!-- 거래액 기준 베스트/워스트 TOP50 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="panel"><div class="ptitle"><span class="dot dg"></span>거래액 베스트 TOP 50</div><div class="tbl-wrap" id="oldBestWrap"></div></div>
+        <div class="panel"><div class="ptitle"><span class="dot dr"></span>거래액 워스트 TOP 50</div><div class="tbl-wrap" id="oldWorstWrap"></div></div>
+      </div>
+      <!-- CTR/CVR 베스트 TOP50 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="panel"><div class="ptitle"><span class="dot" style="background:#60a5fa;"></span>CTR 베스트 TOP 50 <span style="font-size:10px;color:#475569;margin-left:auto;">클릭율 높은 재진행</span></div><div class="tbl-wrap" id="oldCtrBestWrap"></div></div>
+        <div class="panel"><div class="ptitle"><span class="dot" style="background:#34d399;"></span>CVR 베스트 TOP 50 <span style="font-size:10px;color:#475569;margin-left:auto;">전환율 높은 재진행</span></div><div class="tbl-wrap" id="oldCvrBestWrap"></div></div>
       </div>
     </div>
   </div>
@@ -1960,10 +1974,21 @@ function renderProductType(){
   tc2(newItems,'newTrendChart','#818cf8','nt'); tc2(oldItems,'oldTrendChart','#fb923c','ot');
   const ns=[...newItems].sort((a,b)=>b.gmv[curWeek]-a.gmv[curWeek]);
   const os=[...oldItems].sort((a,b)=>b.gmv[curWeek]-a.gmv[curWeek]);
-  buildTable(document.getElementById('newBestWrap'),ns,true,30);
-  buildTable(document.getElementById('newWorstWrap'),[...ns].reverse(),false,30);
-  buildTable(document.getElementById('oldBestWrap'),os,true,30);
-  buildTable(document.getElementById('oldWorstWrap'),[...os].reverse(),false,30);
+  // 거래액 베스트/워스트 TOP50
+  buildTable(document.getElementById('newBestWrap'),ns,true,50);
+  buildTable(document.getElementById('newWorstWrap'),[...ns].reverse(),false,50);
+  buildTable(document.getElementById('oldBestWrap'),os,true,50);
+  buildTable(document.getElementById('oldWorstWrap'),[...os].reverse(),false,50);
+  // 신상품 CTR/CVR 베스트 TOP50
+  const nsCtrSorted=[...newItems].filter(it=>it.gmv[curWeek]>0).sort((a,b)=>b.ctr[curWeek]-a.ctr[curWeek]);
+  const nsCvrSorted=[...newItems].filter(it=>it.gmv[curWeek]>0).sort((a,b)=>b.cvr[curWeek]-a.cvr[curWeek]);
+  buildMetricTable(document.getElementById('newCtrBestWrap'), nsCtrSorted, 'ctr', '#60a5fa', 50);
+  buildMetricTable(document.getElementById('newCvrBestWrap'), nsCvrSorted, 'cvr', '#34d399', 50);
+  // 재진행 CTR/CVR 베스트 TOP50
+  const osCtrSorted=[...oldItems].filter(it=>it.gmv[curWeek]>0).sort((a,b)=>b.ctr[curWeek]-a.ctr[curWeek]);
+  const osCvrSorted=[...oldItems].filter(it=>it.gmv[curWeek]>0).sort((a,b)=>b.cvr[curWeek]-a.cvr[curWeek]);
+  buildMetricTable(document.getElementById('oldCtrBestWrap'), osCtrSorted, 'ctr', '#60a5fa', 50);
+  buildMetricTable(document.getElementById('oldCvrBestWrap'), osCvrSorted, 'cvr', '#34d399', 50);
 }
 
 function openModal(idx){
