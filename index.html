@@ -1294,22 +1294,7 @@ function buildMetricTable(wrap, rows, metricKey, metricColor, limit){
   }).join('')}</tbody></table>`;
 }
 
-function renderBars(){
-  if(!allItems.length) return;
-  const s = getSorted();
-  // GMV 있는 상품만 (0 제외)
-  const active = s.filter(it=>it.gmv[curWeek]>0);
-
-  // CTR 베스트/워스트 (GMV>0 상품 대상)
-  const ctrSorted = [...active].sort((a,b)=>b.ctr[curWeek]-a.ctr[curWeek]);
-  buildMetricTable(document.getElementById('ctrBestWrap'),  ctrSorted, 'ctr', '#60a5fa', 50);
-  buildMetricTable(document.getElementById('ctrWorstWrap'), [...ctrSorted].reverse(), 'ctr', '#f87171', 50);
-
-  // CVR 베스트/워스트
-  const cvrSorted = [...active].sort((a,b)=>b.cvr[curWeek]-a.cvr[curWeek]);
-  buildMetricTable(document.getElementById('cvrBestWrap'),  cvrSorted, 'cvr', '#34d399', 50);
-  buildMetricTable(document.getElementById('cvrWorstWrap'), [...cvrSorted].reverse(), 'cvr', '#fb923c', 50);
-}
+function renderBars(){ /* 메인 대시보드 bars 미사용 */ }
 
 function destroyChart(key){ if(charts[key]){charts[key].destroy();charts[key]=null;} }
 function makeMultiLine(canvasId,wl,datasets,key,yFmt){
