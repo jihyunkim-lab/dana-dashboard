@@ -1259,7 +1259,7 @@ function buildTable(wrap,rows,isBest,limit){
     </tr>`;
   }).join('')}</tbody></table>`;
 }
-function renderTables(){ if(!allItems.length) return; const s=getSorted(); buildTable(document.getElementById('bestWrap'),s,true,30); buildTable(document.getElementById('worstWrap'),[...s].reverse(),false,30); }
+function renderTables(){ /* 메인 대시보드 GMV 베스트/워스트 미사용 */ }
 
 function buildMetricTable(wrap, rows, metricKey, metricColor, limit){
   const top = rows.slice(0, limit||50);
