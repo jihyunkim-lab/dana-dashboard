@@ -324,6 +324,24 @@ body{background:#0f1117;color:#e2e8f0;font-family:system-ui,sans-serif;min-heigh
 
   </div>
 
+  <!-- 3. 일별 거래액 진척도 그래프 -->
+  <div class="panel" style="margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+      <div class="ptitle" style="margin-bottom:0;"><span class="dot" style="background:#34d399;"></span>이번주 일별 거래액 진척도</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-left:8px;" id="dailyGmvLegend">
+        <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#34d399;"><span style="width:18px;height:2px;background:#34d399;display:inline-block;border-radius:1px;"></span>퀸잇 전체</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#a78bfa;"><span style="width:18px;height:2px;background:#a78bfa;display:inline-block;border-radius:1px;"></span>PB1팀</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#f472b6;"><span style="width:18px;height:2px;background:#f472b6;display:inline-block;border-radius:1px;"></span>다나앤페타</div>
+      </div>
+      <span id="dailyGmvBadge" style="font-size:9px;color:#475569;margin-left:auto;">앰플리튜드 · 이번주</span>
+      <button onclick="fetchDailyGmvData()" style="background:#1e2535;border:0.5px solid #334155;color:#60a5fa;font-size:9px;padding:3px 9px;border-radius:4px;cursor:pointer;">↻ 새로고침</button>
+    </div>
+    <!-- KPI 요약 3개 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;" id="dailyGmvKpi"></div>
+    <!-- 차트 -->
+    <div class="chart-wrap" style="height:140px;"><canvas id="dailyGmvChart"></canvas></div>
+  </div>
+
   <!-- 3. KPI 행 -->
   <div class="kpi-grid" id="kpiGrid" style="margin-bottom:14px;">
     <div class="kpi" style="opacity:0.3;"><div class="kpi-lbl">주간 거래액</div><div class="kpi-val" style="background:#2d3748;border-radius:4px;height:28px;width:80px;"></div></div>
@@ -970,6 +988,7 @@ async function loadData(){
     renderTables();
     fetchQueenItData();
     fetchDanaSlotData();
+    fetchDailyGmvData();
     requestAnimationFrame(()=>{
       renderBars();
       renderTrend();
@@ -2264,6 +2283,173 @@ function saveQueenItData(){
   closeModal('queenItModalBg');
 }
 
+
+
+// ── 이번주 일별 거래액 진척도 ─────────────────────────────────
+// 앰플리튜드 order_confirmed → final_purchase_amount sum
+// 3개 시리즈: 퀸잇 전체 / PB1팀(마치마라,지재,다나앤페타,아르앙,뉴트리디데이,희애) / 다나앤페타
+
+const PB1_BRANDS = ['다나앤페타','마치마라','지재','아르앙','뉴트리디데이','희애'];
+const DANA_BRAND = '다나앤페타';
+const AMP_PROJECT = '655548';
+// GAS 프록시 URL (action=daily_gmv 추가 시 활성화)
+// const DAILY_GMV_API = API_URL + '?action=daily_gmv&anchor=';
+let dailyGmvChart = null;
+
+async function fetchDailyGmvData(){
+  const badge = document.getElementById('dailyGmvBadge');
+  const kpiEl = document.getElementById('dailyGmvKpi');
+  if(badge) badge.textContent = '⟳ 로딩 중...';
+
+  // 이번주 월~오늘 날짜 생성
+  const today = new Date();
+  const dow = today.getDay(); // 0=일,1=월,...
+  const mondayOffset = dow === 0 ? 6 : dow - 1;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - mondayOffset);
+  monday.setHours(0,0,0,0);
+
+  const days = [];
+  for(let d = new Date(monday); d <= today; d.setDate(d.getDate()+1)){
+    days.push(d.toISOString().split('T')[0]);
+  }
+  const labels = days.map(d => { const [,m,dd] = d.split('-'); return m+'/'+dd; });
+
+  // 앰플리튜드 MCP로 이미 조회한 이번주 데이터 (실시간 API 연결 전 스냅샷)
+  // 실제 API 연결 시 아래 데이터를 GAS action=daily_gmv 응답으로 교체
+  // 현재 이번주: 3/30(월), 3/31(화) - 오늘 실시간 포함
+  const DAILY_SNAPSHOT = {
+    dates:  ['2026-03-30','2026-03-31'],
+    queenit: [1417254833, 406074816],   // 퀸잇 전체
+    pb1:     [26849298,   8294750],     // PB1팀 합계
+    dana:    [4996133,    1175182],     // 다나앤페타
+  };
+
+  // 날짜 매핑 (스냅샷에 없는 날은 0)
+  const qData = days.map(d => {
+    const idx = DAILY_SNAPSHOT.dates.indexOf(d);
+    return idx >= 0 ? Math.round(DAILY_SNAPSHOT.queenit[idx]/10000) : null;
+  });
+  const pb1Data = days.map(d => {
+    const idx = DAILY_SNAPSHOT.dates.indexOf(d);
+    return idx >= 0 ? Math.round(DAILY_SNAPSHOT.pb1[idx]/10000) : null;
+  });
+  const danaData = days.map(d => {
+    const idx = DAILY_SNAPSHOT.dates.indexOf(d);
+    return idx >= 0 ? Math.round(DAILY_SNAPSHOT.dana[idx]/10000) : null;
+  });
+
+  // KPI 요약 (이번주 누계)
+  const qTotal  = DAILY_SNAPSHOT.queenit.reduce((s,v)=>s+v,0);
+  const pb1Total = DAILY_SNAPSHOT.pb1.reduce((s,v)=>s+v,0);
+  const danaTotal= DAILY_SNAPSHOT.dana.reduce((s,v)=>s+v,0);
+  const pb1Share = qTotal>0?(pb1Total/qTotal*100):0;
+  const danaShare= qTotal>0?(danaTotal/qTotal*100):0;
+
+  if(kpiEl){
+    kpiEl.innerHTML = [
+      {lbl:'퀸잇 전체 누계',  val:Math.round(qTotal/10000).toLocaleString()+'만', color:'#34d399', sub:`이번주 ${days.length}일 합산`},
+      {lbl:'PB1팀 누계',      val:Math.round(pb1Total/10000).toLocaleString()+'만', color:'#a78bfa', sub:`전체 비중 ${pb1Share.toFixed(1)}%`},
+      {lbl:'다나앤페타 누계', val:Math.round(danaTotal/10000).toLocaleString()+'만', color:'#f472b6', sub:`전체 비중 ${danaShare.toFixed(1)}% / PB1 ${pb1Total>0?(danaTotal/pb1Total*100).toFixed(1):'—'}%`},
+    ].map(k=>`<div style="background:#0f1117;border-radius:8px;padding:9px 12px;border:0.5px solid #2d3748;">
+      <div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;">${k.lbl}</div>
+      <div style="font-size:16px;font-weight:600;color:${k.color};">${k.val}</div>
+      <div style="font-size:9px;color:#475569;margin-top:2px;">${k.sub}</div>
+    </div>`).join('');
+  }
+
+  // 차트 렌더
+  renderDailyGmvChart(labels, qData, pb1Data, danaData);
+  if(badge) badge.textContent = '앰플리튜드 · 이번주 실시간';
+}
+
+function renderDailyGmvChart(labels, qData, pb1Data, danaData){
+  if(dailyGmvChart){ dailyGmvChart.destroy(); dailyGmvChart = null; }
+  const ctx = document.getElementById('dailyGmvChart');
+  if(!ctx) return;
+
+  dailyGmvChart = new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '퀸잇 전체',
+          data: qData,
+          backgroundColor: '#34d39922',
+          borderColor: '#34d399',
+          borderWidth: 2,
+          borderRadius: 4,
+          type: 'bar',
+          yAxisID: 'y',
+          order: 3,
+        },
+        {
+          label: 'PB1팀',
+          data: pb1Data,
+          borderColor: '#a78bfa',
+          backgroundColor: '#a78bfa22',
+          borderWidth: 2,
+          borderRadius: 4,
+          type: 'bar',
+          yAxisID: 'y2',
+          order: 2,
+        },
+        {
+          label: '다나앤페타',
+          data: danaData,
+          borderColor: '#f472b6',
+          backgroundColor: 'transparent',
+          pointBackgroundColor: '#f472b6',
+          pointRadius: 5,
+          borderWidth: 2.5,
+          tension: 0.3,
+          type: 'line',
+          yAxisID: 'y2',
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e2535',
+          titleColor: '#94a3b8',
+          bodyColor: '#e2e8f0',
+          borderColor: '#334155',
+          borderWidth: 1,
+          callbacks: {
+            label: c => {
+              const v = c.parsed.y;
+              if(v==null) return c.dataset.label+': —';
+              return c.dataset.label+': '+(v>=10000?(v/10000).toFixed(1)+'억':v.toLocaleString()+'만')+'원';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid:{color:'#1a2232'}, ticks:{color:'#475569',font:{size:10}} },
+        y: {
+          position: 'left',
+          grid: {color:'#1a2232'},
+          ticks: {color:'#34d399',font:{size:9}, callback: v=>v>=10000?(v/10000).toFixed(0)+'억':v+'만'},
+          title: {display:true, text:'퀸잇 전체(만원)', color:'#34d399', font:{size:9}}
+        },
+        y2: {
+          position: 'right',
+          grid: {display:false},
+          ticks: {color:'#a78bfa',font:{size:9}, callback: v=>v+'만'},
+          title: {display:true, text:'PB1/다나앤페타(만원)', color:'#a78bfa', font:{size:9}}
+        }
+      }
+    }
+  });
+}
 
 // ── 다나앤페타 노출 구좌 베스트 ──────────────────────────────
 // 앰플리튜드 차트 zhfohoda: [상품별] 어떤 지면에서 노출 많이 받았지?
