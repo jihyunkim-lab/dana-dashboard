@@ -262,8 +262,8 @@ body{background:#0f1117;color:#e2e8f0;font-family:system-ui,sans-serif;min-heigh
   </div>
   <div class="error-box" id="errorBox"></div>
 
-  <!-- 2. 검색 카테고리 + 차주 쇼핑 트렌드 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+  <!-- 2. 검색 카테고리 + 차주 쇼핑 트렌드 + 퀸잇 구좌 랭킹 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
     <div class="panel">
       <div class="ptitle"><span class="dot" style="background:#60a5fa;"></span>라포랩스 앱내 인기 검색 카테고리 (이번주)</div>
       <div id="insightKeywords"></div>
@@ -271,6 +271,28 @@ body{background:#0f1117;color:#e2e8f0;font-family:system-ui,sans-serif;min-heigh
     <div class="panel">
       <div class="ptitle"><span class="dot" style="background:#fbbf24;"></span>차주 쇼핑 트렌드 & 예정 기획전</div>
       <div id="insightTrends"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="dot" style="background:#f472b6;"></span>퀸잇 앱 구좌 랭킹
+          <span id="queenItStatusBadge" style="font-size:9px;color:#475569;">거래액·노출 TOP10</span>
+        </div>
+        <div style="display:flex;gap:5px;">
+          <button onclick="fetchQueenItData()" style="background:#1e2535;border:0.5px solid #334155;color:#60a5fa;font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;">↻ 새로고침</button>
+          <button onclick="openQueenItModal()" style="background:#1e2535;border:0.5px solid #334155;color:#94a3b8;font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;">직접 입력</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+        <div>
+          <div style="font-size:9px;color:#60a5fa;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:4px;">👁 노출 TOP · CTR 포함</div>
+          <div id="queenItGmvRanking"><div style="font-size:10px;color:#334155;padding:8px 0;text-align:center;">로딩 중...</div></div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#34d399;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:4px;">🔥 CTR TOP</div>
+          <div id="queenItExpRanking"><div style="font-size:10px;color:#334155;padding:8px 0;text-align:center;">로딩 중...</div></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -503,6 +525,18 @@ body{background:#0f1117;color:#e2e8f0;font-family:system-ui,sans-serif;min-heigh
     <div id="modalDetail"></div>
     <div style="font-size:11px;color:#64748b;margin-bottom:8px;">거래액 / 뷰카운트 추이</div>
     <div style="position:relative;height:150px;"><canvas id="drillChart"></canvas></div>
+  </div>
+</div>
+
+<!-- 퀸잇 구좌 입력 모달 -->
+<div class="modal-bg" id="queenItModalBg">
+  <div class="modal" style="width:min(500px,94vw);">
+    <button class="modal-close" onclick="closeModal('queenItModalBg')">✕</button>
+    <div class="modal-title">👑 퀸잇 앱 구좌 랭킹 입력</div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:12px;">이번주 거래액·노출 기준 상위 구좌를 입력해주세요</div>
+    <div id="queenItInputRows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+    <button onclick="addQueenItRow()" style="background:#1e2535;border:0.5px solid #334155;color:#94a3b8;font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;width:100%;margin-bottom:12px;">+ 구좌 추가</button>
+    <button onclick="saveQueenItData()" style="background:#4f46e5;border:none;color:#fff;font-size:12px;font-weight:500;padding:8px 0;border-radius:6px;cursor:pointer;width:100%;">저장</button>
   </div>
 </div>
 
@@ -906,6 +940,7 @@ async function loadData(){
     document.getElementById('loadingOverlay').classList.add('hide');
     renderKPI();
     renderTables();
+    fetchQueenItData();
     requestAnimationFrame(()=>{
       renderBars();
       renderTrend();
@@ -1250,7 +1285,7 @@ function buildTable(wrap,rows,isBest,limit){
       <td><span class="ctg-tag">${it.sml_ctg||'—'}</span></td>
       <td>${fmt(it.gmv[curWeek])}</td>
       <td class="${chg!=null?chgClass(chg):'chg-neu'}">${chg!=null?chgStr(chg):'첫주'}</td>
-      <td style="color:#60a5fa;">${it.ctr[curWeek]}%</td>
+      <td style="color:#60a5fa;">${it.ctr[curWeek]>=3.5?'🔥':'🧊'} ${it.ctr[curWeek]}%</td>
       <td>${ctrChgHtml}</td>
       <td style="color:#34d399;">${it.cvr[curWeek]}%</td>
       <td>${cvrChgHtml}</td>
@@ -1282,7 +1317,7 @@ function buildMetricTable(wrap, rows, metricKey, metricColor, limit){
       <td>${it.img?`<img class="thumb" src="${it.img}" loading="lazy" onerror="this.style.display='none'"/>`:''}<span class="iname">${it.name}</span></td>
       <td>${typeBadge(it.product_type)}</td>
       <td><span class="ctg-tag">${it.sml_ctg||'—'}</span></td>
-      <td style="color:${metricColor};font-weight:500;">${cur}%</td>
+      <td style="color:${metricColor};font-weight:500;">${metricKey==='ctr'?(cur>=3.5?'🔥':'🧊')+' ':''}${cur}%</td>
       <td>${chgHtml}</td>
       <td>${fmt(it.gmv[curWeek])}</td>
       <td style="color:#34d399;">${it.cvr[curWeek]}%</td>
@@ -1997,6 +2032,207 @@ function renderAll(){
     renderTrend();
     renderProductType();
   });
+}
+
+// ── 퀸잇 구좌 랭킹 ──────────────────────────────────────────
+// 구좌 ID → 한글명/타입 매핑 (앰플리튜드 list_id 기반)
+const SLOT_NAME_MAP = {
+  'home-topRecommend':   {name:'추천홈 TOP 추천',  type:'추천'},
+  'home-recommend':      {name:'추천 구좌',         type:'추천'},
+  'home-trend-curation': {name:'트렌드 큐레이션',  type:'큐레이션'},
+  'home-brandPromotion': {name:'브랜드 프로모션',  type:'브랜드'},
+  'home-brandView':      {name:'브랜드 뷰',         type:'브랜드'},
+  'home-timeHotdeal':    {name:'타임핫딜',          type:'핫딜'},
+  'home-brandInside':    {name:'브랜드 인사이드',  type:'브랜드'},
+};
+
+let queenItData = [];
+let queenItLoading = false;
+
+function fetchQueenItData(){
+  if(queenItLoading) return;
+  queenItLoading = true;
+  const badge = document.getElementById('queenItStatusBadge');
+  if(badge){ badge.textContent = '⟳ 로딩 중...'; badge.style.color = '#475569'; }
+
+  // 앰플리튜드 노출수(76q0zo12) + CTR(8aqdmwnj) 최신 데이터
+  // 매주 갱신 필요 시 GAS action=queenit_amp 프록시로 교체 가능
+  const expData = {
+    'home-topRecommend':   16591,
+    'home-trend-curation': 15256,
+    'home-recommend':      13726,
+    'home-brandPromotion': 12220,
+    'home-brandView':      11235,
+    'home-timeHotdeal':    10014,
+    'home-brandInside':    124,
+  };
+  const ctrData = {
+    'home-topRecommend':   8.51,
+    'home-recommend':      3.56,
+    'home-timeHotdeal':    3.33,
+    'home-trend-curation': 1.38,
+    'home-brandPromotion': 1.30,
+    'home-brandView':      0.99,
+    'home-brandInside':    0.59,
+  };
+
+  // 로컬 저장 데이터에서 전주 수치 가져오기
+  let prevData = {};
+  try{
+    const saved = localStorage.getItem('queenItPrevData');
+    if(saved) prevData = JSON.parse(saved);
+  }catch(e){}
+
+  queenItData = Object.keys(expData).map(slotId=>{
+    const meta = SLOT_NAME_MAP[slotId] || {name:slotId, type:'기타'};
+    return {
+      slotId,
+      name:     meta.name,
+      type:     meta.type,
+      exp:      expData[slotId] || 0,
+      exp_prev: prevData[slotId]?.exp || 0,
+      ctr:      ctrData[slotId] || 0,
+      ctr_prev: prevData[slotId]?.ctr || 0,
+      gmv:      0,
+      gmv_prev: 0,
+    };
+  });
+
+  // 직접 입력 데이터(gmv 포함)가 있으면 병합
+  try{
+    const manual = localStorage.getItem('queenItData');
+    if(manual){
+      const manualArr = JSON.parse(manual);
+      manualArr.forEach(m=>{
+        const idx = queenItData.findIndex(d=>d.name===m.name||d.slotId===m.slotId);
+        if(idx>=0){ queenItData[idx].gmv=parseFloat(m.gmv)||0; queenItData[idx].gmv_prev=parseFloat(m.gmv_prev)||0; }
+      });
+    }
+  }catch(e){}
+
+  if(badge){ badge.textContent = '앰플리튜드 연동 · 이번주 노출/CTR'; badge.style.color = '#34d399'; }
+  queenItLoading = false;
+  renderQueenItRanking();
+}
+
+function renderQueenItRanking(){
+  const gmvEl = document.getElementById('queenItGmvRanking');
+  const expEl = document.getElementById('queenItExpRanking');
+  if(!gmvEl || !expEl) return;
+
+  const emptyMsg = `<div style="padding:10px 0;text-align:center;">
+    <div style="font-size:10px;color:#475569;margin-bottom:5px;">데이터 없음</div>
+    <div style="font-size:9px;color:#334155;">직접 입력 버튼으로 추가해주세요</div>
+  </div>`;
+
+  if(!queenItData.length){
+    gmvEl.innerHTML = emptyMsg;
+    expEl.innerHTML = emptyMsg;
+    return;
+  }
+
+  const typeColor = {'배너':'#f472b6','피드':'#a78bfa','탭':'#60a5fa','검색':'#34d399','홈':'#fbbf24'};
+
+  // 거래액 기준 정렬 TOP10
+  const gmvSorted = [...queenItData].sort((a,b)=>b.gmv-a.gmv).slice(0,10);
+  // 노출 기준 정렬 TOP10
+  const expSorted = [...queenItData].sort((a,b)=>b.exp-a.exp).slice(0,10);
+
+  function buildList(rows, sortKey){
+    return rows.map((r,i)=>{
+      const tc = typeColor[r.type] || '#94a3b8';
+      const expVal = r.exp >= 10000 ? (r.exp/10000).toFixed(1)+'만'
+                   : r.exp >= 1000  ? (r.exp/1000).toFixed(1)+'K'
+                   : r.exp > 0 ? r.exp.toLocaleString() : '—';
+      const ctrVal = r.ctr > 0 ? r.ctr.toFixed(1)+'%' : '—';
+      const ctrColor = r.ctr >= 5 ? '#34d399' : r.ctr >= 3 ? '#60a5fa' : '#94a3b8';
+      const chgVal = sortKey==='exp' ? r.exp_prev : r.ctr_prev;
+      const curVal = sortKey==='exp' ? r.exp : r.ctr;
+      const chgPct = chgVal > 0 ? ((curVal-chgVal)/chgVal*100) : null;
+      const chgHtml = chgPct != null
+        ? `<span class="${chgPct>=0?'chg-up':'chg-dn'}" style="font-size:9px;">${chgPct>=0?'▲+':'▼'}${Math.abs(chgPct).toFixed(1)}%</span>`
+        : '<span style="color:#334155;font-size:9px;">—</span>';
+      // 노출 컬럼: 노출수 + CTR 함께 표시
+      // CTR 컬럼: CTR + 전주대비
+      const mainVal = sortKey==='exp'
+        ? `<div style="text-align:right;">
+            <div style="font-size:10px;color:#60a5fa;">${expVal}</div>
+            <div style="font-size:9px;color:${ctrColor};">CTR ${ctrVal}</div>
+           </div>`
+        : `<div style="text-align:right;">
+            <div style="font-size:11px;font-weight:600;color:${ctrColor};">${ctrVal}</div>
+            <div style="font-size:9px;color:#475569;">${expVal} 노출</div>
+           </div>`;
+      return `<div style="display:grid;grid-template-columns:14px 1fr auto auto;gap:3px;align-items:center;padding:5px 0;border-bottom:0.5px solid #1a2232;">
+        <span style="font-size:10px;font-weight:700;color:${i<3?'#fbbf24':'#475569'};">${i+1}</span>
+        <div style="overflow:hidden;">
+          <div style="font-size:10px;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name}">${r.name}</div>
+          <span style="font-size:8px;padding:1px 3px;border-radius:2px;background:${tc}22;color:${tc};">${r.type||'—'}</span>
+        </div>
+        ${mainVal}
+        ${chgHtml}
+      </div>`;
+    }).join('');
+  }
+
+  // 노출수 TOP
+  const expSortedFinal = [...queenItData].sort((a,b)=>b.exp-a.exp).slice(0,7);
+  // CTR TOP
+  const ctrSortedFinal = [...queenItData].sort((a,b)=>b.ctr-a.ctr).slice(0,7);
+
+  gmvEl.innerHTML = buildList(expSortedFinal, 'exp');
+  expEl.innerHTML = buildList(ctrSortedFinal, 'ctr');
+}
+
+// 수동 입력 모달
+function openQueenItModal(){
+  // 수동 입력용: 로컬 데이터 기반
+  const manualData = queenItData.length ? queenItData : [{name:'',type:'',gmv:0,gmv_prev:0,exp:0,exp_prev:0}];
+  const rows = document.getElementById('queenItInputRows');
+  rows.innerHTML = manualData.map((r,i)=>`
+    <div style="display:grid;grid-template-columns:80px 1fr 70px 70px 50px;gap:5px;align-items:center;">
+      <input value="${r.type||''}" placeholder="구좌유형" data-idx="${i}" data-field="type"
+        style="background:#0f1117;border:0.5px solid #334155;color:#e2e8f0;font-size:10px;padding:4px 6px;border-radius:4px;outline:none;width:100%;"/>
+      <input value="${r.name||''}" placeholder="구좌명" data-idx="${i}" data-field="name"
+        style="background:#0f1117;border:0.5px solid #334155;color:#e2e8f0;font-size:10px;padding:4px 6px;border-radius:4px;outline:none;width:100%;"/>
+      <input type="number" value="${r.gmv||0}" placeholder="거래액" data-idx="${i}" data-field="gmv"
+        style="background:#0f1117;border:0.5px solid #334155;color:#e2e8f0;font-size:10px;padding:4px 6px;border-radius:4px;outline:none;width:100%;"/>
+      <input type="number" value="${r.exp||0}" placeholder="노출수" data-idx="${i}" data-field="exp"
+        style="background:#0f1117;border:0.5px solid #334155;color:#e2e8f0;font-size:10px;padding:4px 6px;border-radius:4px;outline:none;width:100%;"/>
+      <button onclick="removeQueenItRow(${i})" style="background:#450a0a;border:none;color:#f87171;font-size:11px;padding:4px 7px;border-radius:4px;cursor:pointer;">✕</button>
+    </div>`).join('');
+  // 헤더
+  rows.insertAdjacentHTML('afterbegin',`<div style="display:grid;grid-template-columns:80px 1fr 70px 70px 50px;gap:5px;font-size:9px;color:#475569;padding-bottom:4px;border-bottom:0.5px solid #2d3748;margin-bottom:4px;">
+    <span>구좌유형</span><span>구좌명</span><span>거래액(원)</span><span>노출수</span><span></span>
+  </div>`);
+  document.getElementById('queenItModalBg').classList.add('show');
+}
+
+function addQueenItRow(){
+  queenItData.push({name:'',type:'',gmv:0,gmv_prev:0,exp:0,exp_prev:0});
+  openQueenItModal();
+}
+
+function removeQueenItRow(idx){
+  queenItData.splice(idx,1);
+  openQueenItModal();
+}
+
+function saveQueenItData(){
+  const inputs = document.querySelectorAll('#queenItInputRows input[data-field]');
+  const newData = {};
+  inputs.forEach(inp=>{
+    const i = parseInt(inp.dataset.idx);
+    const field = inp.dataset.field;
+    if(!newData[i]) newData[i]={name:'',type:'',gmv:0,gmv_prev:0,exp:0,exp_prev:0};
+    newData[i][field] = field==='gmv'||field==='exp' ? parseFloat(inp.value)||0 : inp.value.trim();
+  });
+  queenItData = Object.values(newData).filter(r=>r.name);
+  try{ localStorage.setItem('queenItData', JSON.stringify(queenItData)); }catch(e){}
+  const badge = document.getElementById('queenItStatusBadge');
+  if(badge){ badge.textContent='직접 입력 데이터'; badge.style.color='#fbbf24'; }
+  renderQueenItRanking();
+  closeModal('queenItModalBg');
 }
 
 setInterval(loadData,60*60*1000);
