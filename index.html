@@ -262,38 +262,66 @@ body{background:#0f1117;color:#e2e8f0;font-family:system-ui,sans-serif;min-heigh
   </div>
   <div class="error-box" id="errorBox"></div>
 
-  <!-- 2. 검색 카테고리 + 차주 쇼핑 트렌드 + 퀸잇 구좌 랭킹 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+  <!-- 2. 2x2 그리드: 검색카테고리 / 쇼핑트렌드 / 퀸잇구좌 / 다나앤페타 노출구좌 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:12px;margin-bottom:14px;">
+
+    <!-- [1,1] 검색 카테고리 -->
     <div class="panel">
       <div class="ptitle"><span class="dot" style="background:#60a5fa;"></span>라포랩스 앱내 인기 검색 카테고리 (이번주)</div>
       <div id="insightKeywords"></div>
     </div>
+
+    <!-- [1,2] 차주 쇼핑 트렌드 -->
     <div class="panel">
       <div class="ptitle"><span class="dot" style="background:#fbbf24;"></span>차주 쇼핑 트렌드 & 예정 기획전</div>
       <div id="insightTrends"></div>
     </div>
+
+    <!-- [2,1] 퀸잇 앱 구좌 랭킹 -->
     <div class="panel">
       <div class="ptitle" style="justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:6px;">
           <span class="dot" style="background:#f472b6;"></span>퀸잇 앱 구좌 랭킹
-          <span id="queenItStatusBadge" style="font-size:9px;color:#475569;">거래액·노출 TOP10</span>
+          <span id="queenItStatusBadge" style="font-size:9px;color:#475569;">노출·CTR TOP</span>
         </div>
         <div style="display:flex;gap:5px;">
-          <button onclick="fetchQueenItData()" style="background:#1e2535;border:0.5px solid #334155;color:#60a5fa;font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;">↻ 새로고침</button>
+          <button onclick="fetchQueenItData()" style="background:#1e2535;border:0.5px solid #334155;color:#60a5fa;font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;">↻</button>
           <button onclick="openQueenItModal()" style="background:#1e2535;border:0.5px solid #334155;color:#94a3b8;font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;">직접 입력</button>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;">
         <div>
-          <div style="font-size:9px;color:#60a5fa;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:4px;">👁 노출 TOP · CTR 포함</div>
-          <div id="queenItGmvRanking"><div style="font-size:10px;color:#334155;padding:8px 0;text-align:center;">로딩 중...</div></div>
+          <div style="font-size:9px;color:#60a5fa;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;margin-bottom:4px;">👁 노출 TOP</div>
+          <div id="queenItGmvRanking"><div style="font-size:10px;color:#334155;padding:6px 0;text-align:center;">로딩 중...</div></div>
         </div>
         <div>
-          <div style="font-size:9px;color:#34d399;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:4px;">🔥 CTR TOP</div>
-          <div id="queenItExpRanking"><div style="font-size:10px;color:#334155;padding:8px 0;text-align:center;">로딩 중...</div></div>
+          <div style="font-size:9px;color:#34d399;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;margin-bottom:4px;">🔥 CTR TOP</div>
+          <div id="queenItExpRanking"><div style="font-size:10px;color:#334155;padding:6px 0;text-align:center;">로딩 중...</div></div>
         </div>
       </div>
     </div>
+
+    <!-- [2,2] 다나앤페타 노출 구좌 베스트 -->
+    <div class="panel">
+      <div class="ptitle" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="dot" style="background:#a78bfa;"></span>다나앤페타 노출 구좌 베스트
+          <span style="font-size:9px;color:#475569;">앰플리튜드 · 이번주</span>
+        </div>
+        <button onclick="fetchDanaSlotData()" style="background:#1e2535;border:0.5px solid #334155;color:#60a5fa;font-size:9px;padding:2px 8px;border-radius:4px;cursor:pointer;">↻</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;">
+        <div>
+          <div style="font-size:9px;color:#a78bfa;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;margin-bottom:4px;">📍 지면별 노출 TOP</div>
+          <div id="danaSlotRanking"><div style="font-size:10px;color:#334155;padding:6px 0;text-align:center;">로딩 중...</div></div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#fbbf24;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;margin-bottom:4px;">📊 기획전 노출 TOP</div>
+          <div id="danaCollRanking"><div style="font-size:10px;color:#334155;padding:6px 0;text-align:center;">로딩 중...</div></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- 3. KPI 행 -->
@@ -941,6 +969,7 @@ async function loadData(){
     renderKPI();
     renderTables();
     fetchQueenItData();
+    fetchDanaSlotData();
     requestAnimationFrame(()=>{
       renderBars();
       renderTrend();
@@ -2233,6 +2262,92 @@ function saveQueenItData(){
   if(badge){ badge.textContent='직접 입력 데이터'; badge.style.color='#fbbf24'; }
   renderQueenItRanking();
   closeModal('queenItModalBg');
+}
+
+
+// ── 다나앤페타 노출 구좌 베스트 ──────────────────────────────
+// 앰플리튜드 차트 zhfohoda: [상품별] 어떤 지면에서 노출 많이 받았지?
+// prev_url 기준 집계 (다나앤페타 브랜드 전체 기준 스냅샷)
+
+const DANA_SLOT_SNAPSHOT = {
+  // 지면별 노출 (prev_url 기준, collection 제외)
+  pages: [
+    {url:'/home/[[...home]]',     name:'홈 피드',        exp:15910},
+    {url:'/product/[productId]',  name:'상품 상세',       exp:14621},
+    {url:'ImageViewerScreen',     name:'이미지 뷰어',     exp:12086},
+    {url:'/cart',                 name:'장바구니',         exp:3236},
+    {url:'/category/[...categoryId]', name:'카테고리',    exp:2820},
+    {url:'/search',               name:'검색 결과',        exp:2243},
+    {url:'/product/[productId]/reviews', name:'상품 리뷰', exp:1746},
+    {url:'ImageReviewScreen',     name:'이미지 리뷰',     exp:1640},
+    {url:'/brand/[brandId]',      name:'브랜드 페이지',   exp:1232},
+  ],
+  // 기획전별 노출 TOP (prev_collectionId 기준)
+  collections: [
+    {id:'COLL26020214565242b15', exp:3790},
+    {id:'COLL2601191103005354c', exp:3124},
+    {id:'COLL260318130706be056', exp:3061},
+    {id:'COLL250820144741',      exp:2284},
+    {id:'COLL250818165747',      exp:1909},
+    {id:'COLL241209150906',      exp:1805},
+    {id:'COLL2601051605321c58b', exp:1714},
+    {id:'COLL250728160829',      exp:1355},
+    {id:'COLL250811112427',      exp:1201},
+    {id:'COLL250417105533',      exp:1155},
+  ]
+};
+
+function fetchDanaSlotData(){
+  renderDanaSlotRanking();
+}
+
+function renderDanaSlotRanking(){
+  const slotEl = document.getElementById('danaSlotRanking');
+  const collEl = document.getElementById('danaCollRanking');
+  if(!slotEl || !collEl) return;
+
+  // ── 지면별 노출 TOP ──────────────────────────────────────
+  slotEl.innerHTML = DANA_SLOT_SNAPSHOT.pages.map((r,i)=>{
+    const expVal = r.exp >= 10000 ? (r.exp/10000).toFixed(1)+'만'
+                 : r.exp >= 1000  ? (r.exp/1000).toFixed(1)+'K'
+                 : r.exp.toLocaleString();
+    const barW = Math.min(100, Math.round(r.exp / DANA_SLOT_SNAPSHOT.pages[0].exp * 100));
+    const rankColor = i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#fb923c':'#475569';
+    return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:0.5px solid #1a2232;">
+      <span style="font-size:10px;font-weight:700;color:${rankColor};width:14px;flex-shrink:0;">${i+1}</span>
+      <div style="flex:1;overflow:hidden;">
+        <div style="font-size:10px;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</div>
+        <div style="background:#1a2232;border-radius:2px;height:3px;margin-top:2px;">
+          <div style="width:${barW}%;height:100%;border-radius:2px;background:#a78bfa;"></div>
+        </div>
+      </div>
+      <span style="font-size:10px;color:#a78bfa;font-weight:500;min-width:32px;text-align:right;">${expVal}</span>
+    </div>`;
+  }).join('') +
+  `<div style="font-size:9px;color:#334155;margin-top:5px;text-align:right;">앰플리튜드 · 노출 UV 기준</div>`;
+
+  // ── 기획전별 노출 TOP ─────────────────────────────────────
+  collEl.innerHTML = DANA_SLOT_SNAPSHOT.collections.map((r,i)=>{
+    const expVal = r.exp >= 1000 ? (r.exp/1000).toFixed(1)+'K' : r.exp.toLocaleString();
+    const barW = Math.min(100, Math.round(r.exp / DANA_SLOT_SNAPSHOT.collections[0].exp * 100));
+    const rankColor = i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#fb923c':'#475569';
+    // COLL ID에서 날짜 추출 (앞 10자리: COLL + 6자리날짜)
+    const dateStr = r.id.replace('COLL','').substring(0,6);
+    const collLabel = dateStr.length===6
+      ? `기획전 ${dateStr.substring(0,2)}.${dateStr.substring(2,4)}.${dateStr.substring(4,6)}`
+      : r.id.substring(0,16)+'..';
+    return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:0.5px solid #1a2232;">
+      <span style="font-size:10px;font-weight:700;color:${rankColor};width:14px;flex-shrink:0;">${i+1}</span>
+      <div style="flex:1;overflow:hidden;">
+        <div style="font-size:10px;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.id}">${collLabel}</div>
+        <div style="background:#1a2232;border-radius:2px;height:3px;margin-top:2px;">
+          <div style="width:${barW}%;height:100%;border-radius:2px;background:#fbbf24;"></div>
+        </div>
+      </div>
+      <span style="font-size:10px;color:#fbbf24;font-weight:500;min-width:32px;text-align:right;">${expVal}</span>
+    </div>`;
+  }).join('') +
+  `<div style="font-size:9px;color:#334155;margin-top:5px;text-align:right;">앰플리튜드 zhfohoda · 누적 UV</div>`;
 }
 
 setInterval(loadData,60*60*1000);
